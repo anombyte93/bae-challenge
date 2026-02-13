@@ -3,9 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>BAE Challenge</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<meta name="theme-color" content="#0a0a0f">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
 
@@ -38,6 +43,324 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* ========== LANDING / HERO VIEW ========== */
+  .landing-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100dvh;
+    padding: 0 20px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .landing-view.hidden { display: none; }
+
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    max-width: 480px;
+    padding: 60px 0 40px;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 20px;
+  }
+
+  .hero-title {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--pink), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 32px;
+    max-width: 340px;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .hero-cta {
+    flex: 1;
+    padding: 14px 8px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    border: none;
+  }
+
+  .hero-cta:active { transform: scale(0.96); }
+
+  .hero-cta-primary {
+    background: linear-gradient(135deg, var(--accent), var(--pink));
+    color: white;
+  }
+
+  .hero-cta-secondary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .hero-features {
+    display: flex;
+    gap: 24px;
+    margin-top: 36px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .hero-feature {
+    text-align: center;
+    max-width: 100px;
+  }
+
+  .hero-feature-icon {
+    font-size: 28px;
+    margin-bottom: 6px;
+  }
+
+  .hero-feature-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    line-height: 1.3;
+  }
+
+  .hero-footer {
+    padding: 20px 0 32px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .hero-footer a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  /* iOS INSTALL MODAL */
+  .ios-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .ios-modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .ios-modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 24px 20px 36px;
+    width: 100%;
+    max-width: 420px;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .ios-modal-backdrop.open .ios-modal {
+    transform: translateY(0);
+  }
+
+  .ios-modal h3 {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .ios-step {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ios-step:last-child { border-bottom: none; }
+
+  .ios-step-num {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .ios-step-text {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .ios-step-text strong {
+    color: var(--accent);
+  }
+
+  .ios-modal-close {
+    width: 100%;
+    padding: 12px;
+    margin-top: 16px;
+    background: var(--border);
+    border: none;
+    border-radius: 10px;
+    color: var(--text-dim);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* ========== AUTH VIEW ========== */
+  .auth-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    padding: 24px;
+    text-align: center;
+    position: relative;
+  }
+
+  .auth-back {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-dim);
+    font-size: 14px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .auth-back:hover { color: var(--text); border-color: var(--text-dim); }
+
+  .auth-view.hidden { display: none; }
+
+  .auth-logo {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .auth-sub {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 32px;
+  }
+
+  .auth-form {
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .auth-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 16px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .auth-input:focus {
+    border-color: var(--accent);
+  }
+
+  .auth-input::placeholder {
+    color: var(--text-dim);
+  }
+
+  .auth-btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--pink));
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+
+  .auth-btn:active { transform: scale(0.97); }
+  .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .auth-msg {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--green);
+    min-height: 20px;
+  }
+
+  .auth-msg.error { color: #ef4444; }
+
+  /* ========== APP SHELL (hidden until auth) ========== */
+  .app-view { display: none; }
+  .app-view.active { display: block; }
+
   /* STICKY HEADER / PROGRESS */
   .top-bar {
     position: sticky;
@@ -46,54 +369,125 @@
     background: rgba(10, 10, 15, 0.92);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    padding: 12px 16px 8px;
+    padding: 10px 16px 8px;
     border-bottom: 1px solid var(--border);
   }
 
+  .top-bar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
   .top-bar h1 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 800;
-    text-align: center;
     background: linear-gradient(135deg, var(--accent), var(--pink));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .progress-row {
+  .top-bar-icons {
+    display: flex;
+    gap: 6px;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-dim);
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s;
+  }
+
+  .icon-btn:active { transform: scale(0.92); }
+  .icon-btn.active-nav { border-color: var(--accent); color: var(--accent); }
+
+  .user-greeting {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .user-greeting span { color: var(--text); font-weight: 600; }
+
+  /* WEEK TABS */
+  .week-tabs {
+    display: flex;
+    gap: 4px;
     margin-top: 8px;
   }
 
-  .progress-bar-wrap {
+  .week-tab {
     flex: 1;
+    padding: 6px 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .week-tab:active { transform: scale(0.95); }
+
+  .week-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .week-tab.current::after {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 4px;
+    background: var(--green);
+    border-radius: 50%;
+    margin: 2px auto 0;
+  }
+
+  /* 4-SEGMENT PROGRESS BAR */
+  .progress-segments {
+    display: flex;
+    gap: 3px;
+    margin-top: 8px;
     height: 6px;
+  }
+
+  .progress-segment {
+    flex: 1;
     background: var(--border);
     border-radius: 3px;
     overflow: hidden;
   }
 
-  .progress-bar-fill {
+  .progress-segment-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, var(--accent), var(--pink));
     border-radius: 3px;
     transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .progress-text {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--accent);
-    min-width: 50px;
-    text-align: right;
-    white-space: nowrap;
-  }
+  .progress-segment-fill.w1 { background: var(--accent); }
+  .progress-segment-fill.w2 { background: var(--pink); }
+  .progress-segment-fill.w3 { background: var(--blue); }
+  .progress-segment-fill.w4 { background: var(--green); }
 
   .points-display {
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
     font-size: 12px;
     color: var(--text-dim);
     margin-top: 4px;
@@ -114,7 +508,7 @@
   /* DAY SECTION HEADERS */
   .day-header {
     position: sticky;
-    top: 76px;
+    top: 130px;
     z-index: 50;
     background: rgba(10, 10, 15, 0.95);
     backdrop-filter: blur(12px);
@@ -151,7 +545,7 @@
     color: var(--text-dim);
   }
 
-  /* THE CHECKBOX ITEM - THE STAR OF THE SHOW */
+  /* THE CHECKBOX ITEM */
   .item {
     display: flex;
     align-items: center;
@@ -169,9 +563,7 @@
     -webkit-user-select: none;
   }
 
-  .item:active {
-    transform: scale(0.97);
-  }
+  .item:active { transform: scale(0.97); }
 
   .item.checked {
     background: var(--card-done);
@@ -184,11 +576,8 @@
     text-decoration-color: rgba(136, 136, 160, 0.4);
   }
 
-  .item.checked .item-pts {
-    color: var(--green);
-  }
+  .item.checked .item-pts { color: var(--green); }
 
-  /* RIPPLE */
   .item .ripple {
     position: absolute;
     border-radius: 50%;
@@ -202,7 +591,6 @@
     to { transform: scale(4); opacity: 0; }
   }
 
-  /* CUSTOM CHECKBOX */
   .check-circle {
     width: 28px;
     height: 28px;
@@ -213,7 +601,6 @@
     align-items: center;
     justify-content: center;
     transition: all 0.15s ease;
-    position: relative;
   }
 
   .item.checked .check-circle {
@@ -258,7 +645,6 @@
     transition: color 0.15s ease;
   }
 
-  /* POINT BADGE COLORS */
   .pts-1 { color: var(--green); }
   .pts-3 { color: var(--blue); }
   .pts-5 { color: var(--accent); }
@@ -341,9 +727,7 @@
     transition: color 0.3s;
   }
 
-  .streak-bonus.earned {
-    color: var(--gold);
-  }
+  .streak-bonus.earned { color: var(--gold); }
 
   /* RESET */
   .reset-section {
@@ -392,7 +776,6 @@
     100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
   }
 
-  /* CONFETTI */
   .confetti {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -413,32 +796,666 @@
     0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
     100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
   }
+
+  /* ========== OVERLAY (Leaderboard / Settings) ========== */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(10, 10, 15, 0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .overlay.open { transform: translateY(0); }
+
+  .overlay-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 10;
+  }
+
+  .overlay-header h2 {
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .overlay-close {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  .overlay-close:active { transform: scale(0.92); }
+
+  .overlay-body {
+    padding: 16px;
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* LEADERBOARD */
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 6px;
+    transition: all 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+  }
+
+  .lb-row:active { transform: scale(0.98); }
+
+  .lb-row.me {
+    border-color: var(--accent);
+    background: rgba(168, 85, 247, 0.08);
+  }
+
+  .lb-rank {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-dim);
+    min-width: 24px;
+    text-align: center;
+  }
+
+  .lb-row:nth-child(1) .lb-rank { color: var(--gold); }
+  .lb-row:nth-child(2) .lb-rank { color: #c0c0c0; }
+  .lb-row:nth-child(3) .lb-rank { color: #cd7f32; }
+
+  .lb-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  .lb-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .lb-name {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 600;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .lb-pts {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--gold);
+  }
+
+  .lb-empty {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  /* SETTINGS */
+  .settings-group {
+    margin-bottom: 20px;
+  }
+
+  .settings-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .settings-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+  }
+
+  .settings-input:focus { border-color: var(--accent); }
+
+  .settings-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .settings-toggle-label {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: var(--border);
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.2s;
+  }
+
+  .toggle-switch.on { background: var(--green); }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+  }
+
+  .toggle-switch.on::after { transform: translateX(20px); }
+
+  .settings-save {
+    width: 100%;
+    padding: 14px;
+    margin-top: 8px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .settings-save:active { transform: scale(0.97); }
+
+  .settings-signout {
+    width: 100%;
+    padding: 14px;
+    margin-top: 24px;
+    background: none;
+    border: 1px solid #ef4444;
+    border-radius: 10px;
+    color: #ef4444;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .settings-signout:active { transform: scale(0.95); }
+
+  .settings-msg {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--green);
+    min-height: 18px;
+  }
+
+  /* AVATAR UPLOAD (Settings) */
+  .settings-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .settings-avatar-preview {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .settings-avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .settings-avatar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .settings-avatar-btn {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .settings-avatar-btn:active { transform: scale(0.95); }
+
+  .settings-avatar-remove {
+    padding: 6px 12px;
+    border: none;
+    background: none;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  /* ACHIEVEMENTS OVERLAY */
+  .ach-user-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0 12px;
+  }
+
+  .ach-user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    overflow: hidden;
+  }
+
+  .ach-user-info {
+    flex: 1;
+  }
+
+  .ach-user-name {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .ach-user-pts {
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  .ach-week-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 8px 0 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ach-week-tab {
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .ach-week-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .ach-category {
+    margin-bottom: 16px;
+  }
+
+  .ach-category-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+
+  .ach-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
+  .ach-item.done {
+    border-color: var(--green);
+    background: rgba(34, 197, 94, 0.06);
+  }
+
+  .ach-item .ach-check {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .ach-item .ach-text {
+    flex: 1;
+    color: var(--text-dim);
+  }
+
+  .ach-item.done .ach-text {
+    color: var(--text);
+  }
+
+  .ach-item .ach-pts {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+  }
+
+  .ach-item.done .ach-pts {
+    color: var(--gold);
+  }
+
+  .ach-private {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  .ach-summary {
+    display: flex;
+    gap: 8px;
+    padding: 12px 0;
+    margin-bottom: 12px;
+  }
+
+  .ach-stat {
+    flex: 1;
+    text-align: center;
+    padding: 10px 6px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .ach-stat-val {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+
+  .ach-stat-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-top: 2px;
+  }
+
+  /* SYNC INDICATOR */
+  .sync-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    display: inline-block;
+    margin-left: 6px;
+    transition: background 0.3s;
+  }
+
+  .sync-dot.syncing {
+    background: var(--gold);
+    animation: pulse 1s infinite;
+  }
+
+  .sync-dot.error { background: #ef4444; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
 </style>
 </head>
 <body>
 
-<div class="top-bar">
-  <h1>BAE MONTHLY CHALLENGE</h1>
-  <div class="progress-row">
-    <div class="progress-bar-wrap">
-      <div class="progress-bar-fill" id="progressBar"></div>
+<!-- ========== LANDING / HERO VIEW ========== -->
+<div class="landing-view" id="landingView">
+  <div class="hero">
+    <div class="hero-badge">MARCH 2026 CHALLENGE</div>
+    <h1 class="hero-title">Transform your habits with your community</h1>
+    <p class="hero-sub">Track daily wins, earn points, and climb the leaderboard with 100+ women building better habits together.</p>
+    <div class="hero-ctas">
+      <button class="hero-cta hero-cta-primary" id="getAppBtn" onclick="handleGetApp()">Get the App</button>
+      <button class="hero-cta hero-cta-secondary" onclick="goToAuth()">Use Online</button>
     </div>
-    <div class="progress-text" id="progressText">0%</div>
+    <div class="hero-features">
+      <div class="hero-feature">
+        <div class="hero-feature-icon">✅</div>
+        <div class="hero-feature-text">Daily check-ins</div>
+      </div>
+      <div class="hero-feature">
+        <div class="hero-feature-icon">🏆</div>
+        <div class="hero-feature-text">Live leaderboard</div>
+      </div>
+      <div class="hero-feature">
+        <div class="hero-feature-icon">🔥</div>
+        <div class="hero-feature-text">Streak bonuses</div>
+      </div>
+      <div class="hero-feature">
+        <div class="hero-feature-icon">📱</div>
+        <div class="hero-feature-text">Works offline</div>
+      </div>
+    </div>
   </div>
-  <div class="points-display">
-    <span id="pointsEarned">0</span> / <span id="pointsTotal">0</span> pts this week
+  <div class="hero-footer">By the BAE Fitness Community</div>
+</div>
+
+<!-- iOS INSTALL MODAL -->
+<div class="ios-modal-backdrop" id="iosModal">
+  <div class="ios-modal">
+    <h3>Install BAE Challenge</h3>
+    <div class="ios-step">
+      <div class="ios-step-num">1</div>
+      <div class="ios-step-text">Tap the <strong>Share</strong> button at the bottom of Safari</div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">2</div>
+      <div class="ios-step-text">Scroll down and tap <strong>Add to Home Screen</strong></div>
+    </div>
+    <div class="ios-step">
+      <div class="ios-step-num">3</div>
+      <div class="ios-step-text">Tap <strong>Add</strong> in the top right</div>
+    </div>
+    <button class="ios-modal-close" onclick="closeIosModal()">Got it</button>
   </div>
 </div>
 
-<div class="feed" id="feed"></div>
+<!-- ========== AUTH VIEW ========== -->
+<div class="auth-view hidden" id="authView">
+  <button class="auth-back" id="authBack" onclick="showLanding()">← Back</button>
+  <div class="auth-logo">BAE CHALLENGE</div>
+  <div class="auth-sub">Sign in to track your progress</div>
+  <div class="auth-form" id="authForm">
+    <input class="auth-input" id="authEmail" type="email" placeholder="your@email.com" autocomplete="email" inputmode="email">
+    <button class="auth-btn" id="authBtn" onclick="sendMagicLink()">Send Magic Link</button>
+    <div class="auth-msg" id="authMsg"></div>
+  </div>
+</div>
 
-<div class="celebration" id="celebration"></div>
+<!-- ========== APP VIEW ========== -->
+<div class="app-view" id="appView">
+
+  <div class="top-bar">
+    <div class="top-bar-row">
+      <div>
+        <h1>BAE CHALLENGE</h1>
+        <div class="user-greeting">Hey <span id="userName">...</span> <span class="sync-dot" id="syncDot"></span></div>
+      </div>
+      <div class="top-bar-icons">
+        <div class="icon-btn" onclick="openLeaderboard()" title="Leaderboard">🏆</div>
+        <div class="icon-btn" onclick="openSettings()" title="Settings">⚙️</div>
+      </div>
+    </div>
+
+    <div class="week-tabs" id="weekTabs"></div>
+
+    <div class="progress-segments" id="progressSegments">
+      <div class="progress-segment"><div class="progress-segment-fill w1" id="seg1"></div></div>
+      <div class="progress-segment"><div class="progress-segment-fill w2" id="seg2"></div></div>
+      <div class="progress-segment"><div class="progress-segment-fill w3" id="seg3"></div></div>
+      <div class="progress-segment"><div class="progress-segment-fill w4" id="seg4"></div></div>
+    </div>
+
+    <div class="points-display">
+      <div>Week: <span id="weekPts">0</span> pts</div>
+      <div>Month: <span id="monthPts">0</span> pts</div>
+    </div>
+  </div>
+
+  <div class="feed" id="feed"></div>
+  <div class="celebration" id="celebration"></div>
+</div>
+
+<!-- ========== LEADERBOARD OVERLAY ========== -->
+<div class="overlay" id="leaderboardOverlay">
+  <div class="overlay-header">
+    <h2>🏆 Leaderboard</h2>
+    <div class="overlay-close" onclick="closeOverlay('leaderboardOverlay')">✕</div>
+  </div>
+  <div class="overlay-body" id="leaderboardBody">
+    <div class="lb-empty">Loading...</div>
+  </div>
+</div>
+
+<!-- ========== ACHIEVEMENTS OVERLAY ========== -->
+<div class="overlay" id="achievementsOverlay">
+  <div class="overlay-header">
+    <h2 id="achTitle">Achievements</h2>
+    <div class="overlay-close" onclick="closeOverlay('achievementsOverlay')">✕</div>
+  </div>
+  <div class="overlay-body" id="achievementsBody">
+  </div>
+</div>
+
+<!-- ========== SETTINGS OVERLAY ========== -->
+<div class="overlay" id="settingsOverlay">
+  <div class="overlay-header">
+    <h2>⚙️ Settings</h2>
+    <div class="overlay-close" onclick="closeOverlay('settingsOverlay')">✕</div>
+  </div>
+  <div class="overlay-body">
+    <div class="settings-group">
+      <div class="settings-label">Profile Photo</div>
+      <div class="settings-avatar-row">
+        <div class="settings-avatar-preview" id="settingsAvatarPreview"></div>
+        <div class="settings-avatar-actions">
+          <label class="settings-avatar-btn" for="avatarFileInput">Choose Photo</label>
+          <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarSelect(this)">
+          <button class="settings-avatar-remove" id="avatarRemoveBtn" onclick="removeAvatar()">Remove photo</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">Display Name</div>
+      <input class="settings-input" id="settingsName" type="text" placeholder="Your name" maxlength="30">
+    </div>
+    <div class="settings-group">
+      <div class="settings-label">Privacy</div>
+      <div class="settings-toggle" onclick="togglePrivacy()">
+        <div class="settings-toggle-label">Show me on leaderboard</div>
+        <div class="toggle-switch on" id="privacyToggle"></div>
+      </div>
+    </div>
+    <button class="settings-save" onclick="saveSettings()">Save Changes</button>
+    <div class="settings-msg" id="settingsMsg"></div>
+    <button class="settings-signout" onclick="signOut()">Sign Out</button>
+  </div>
+</div>
 
 <script>
 (function() {
-  const STORAGE_KEY = 'bae-challenge-v1';
+  // =====================================================
+  // CONFIG - Replace with your Supabase project values
+  // =====================================================
+  const SUPABASE_URL = 'https://xemuecskigcpjnvawwgq.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlbXVlY3NraWdjcGpudmF3d2dxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5NzAzMjgsImV4cCI6MjA4NjU0NjMyOH0.dY9boNXPivZtwebnGHxpn5FOFJrOQfnPo54rcfWG2DI';
+
+  const STORAGE_KEY = 'bae-challenge-v2';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // =====================================================
+  // CHALLENGE DATA
+  // =====================================================
   const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  const dayEmoji = '☀️';
 
   const engagement = [
     { emoji: '🥗', text: 'Post a photo of your meal prep', pts: 1 },
@@ -474,7 +1491,9 @@
     { emoji: '👯‍♀️', text: 'Community event', pts: 5 },
   ];
 
-  // Audio engine (works on iOS where navigator.vibrate doesn't)
+  // =====================================================
+  // AUDIO ENGINE (iOS-safe)
+  // =====================================================
   let audioCtx = null;
 
   function initAudio() {
@@ -535,36 +1554,140 @@
     });
   }
 
-  // Init audio on first touch (required by iOS autoplay policy)
   document.addEventListener('touchstart', initAudio, { once: true });
   document.addEventListener('mousedown', initAudio, { once: true });
 
-  // State
-  let state = loadState();
-
-  function loadState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch { return {}; }
+  // =====================================================
+  // DATE HELPERS
+  // =====================================================
+  function getChallengeMonth() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
   }
 
-  function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  function getCurrentWeek() {
+    const day = new Date().getDate();
+    return Math.min(Math.ceil(day / 7), 4);
+  }
+
+  // =====================================================
+  // STATE MANAGEMENT
+  // =====================================================
+  let currentUser = null;
+  let userProfile = null;
+  let activeWeek = getCurrentWeek();
+  let localState = {}; // { 'week:itemKey': true }
+  let allWeekStates = {}; // { 1: {items...}, 2: {items...}, ... }
+  let syncQueue = []; // pending syncs
+  let isSyncing = false;
+
+  function localKey() {
+    return `${STORAGE_KEY}-${currentUser?.id || 'anon'}`;
+  }
+
+  function loadLocalState() {
+    try {
+      const raw = localStorage.getItem(localKey());
+      allWeekStates = raw ? JSON.parse(raw) : {};
+    } catch { allWeekStates = {}; }
+    localState = allWeekStates[activeWeek] || {};
+  }
+
+  function saveLocalState() {
+    allWeekStates[activeWeek] = localState;
+    localStorage.setItem(localKey(), JSON.stringify(allWeekStates));
   }
 
   function isChecked(id) {
-    return !!state[id];
+    return !!localState[id];
+  }
+
+  // =====================================================
+  // SUPABASE SYNC
+  // =====================================================
+  function setSyncStatus(status) {
+    const dot = document.getElementById('syncDot');
+    if (!dot) return;
+    dot.className = 'sync-dot' + (status === 'syncing' ? ' syncing' : status === 'error' ? ' error' : '');
+  }
+
+  async function syncCheckToServer(itemKey, checked) {
+    if (!currentUser) return;
+    const month = getChallengeMonth();
+    setSyncStatus('syncing');
+
+    try {
+      if (checked) {
+        await sb.from('check_items').upsert({
+          user_id: currentUser.id,
+          challenge_month: month,
+          week_number: activeWeek,
+          item_key: itemKey,
+        }, { onConflict: 'user_id,challenge_month,week_number,item_key' });
+      } else {
+        await sb.from('check_items').delete().match({
+          user_id: currentUser.id,
+          challenge_month: month,
+          week_number: activeWeek,
+          item_key: itemKey,
+        });
+      }
+      setSyncStatus('ok');
+    } catch (err) {
+      console.error('Sync error:', err);
+      setSyncStatus('error');
+    }
+  }
+
+  async function loadStateFromServer() {
+    if (!currentUser) return;
+    const month = getChallengeMonth();
+    setSyncStatus('syncing');
+
+    try {
+      const { data, error } = await sb.from('check_items')
+        .select('week_number, item_key')
+        .eq('user_id', currentUser.id)
+        .eq('challenge_month', month);
+
+      if (error) throw error;
+
+      // Rebuild allWeekStates from server data
+      allWeekStates = {};
+      (data || []).forEach(row => {
+        if (!allWeekStates[row.week_number]) allWeekStates[row.week_number] = {};
+        allWeekStates[row.week_number][row.item_key] = true;
+      });
+
+      localState = allWeekStates[activeWeek] || {};
+      saveLocalState();
+      setSyncStatus('ok');
+    } catch (err) {
+      console.error('Load error, using local cache:', err);
+      setSyncStatus('error');
+      loadLocalState();
+    }
   }
 
   function toggle(id, pts) {
-    state[id] = !state[id];
-    saveState();
+    const nowChecked = !localState[id];
+    if (nowChecked) {
+      localState[id] = true;
+    } else {
+      delete localState[id];
+    }
+    saveLocalState();
     updateProgress();
-    return state[id];
+
+    // Fire-and-forget sync
+    syncCheckToServer(id, nowChecked);
+
+    return nowChecked;
   }
 
-  // Build the feed
+  // =====================================================
+  // BUILD FEED
+  // =====================================================
   const feed = document.getElementById('feed');
   let allItems = [];
   let totalPossiblePts = 0;
@@ -593,69 +1716,99 @@
     return d.innerHTML;
   }
 
-  let html = '';
+  function buildFeed() {
+    allItems = [];
+    totalPossiblePts = 0;
+    let html = '';
 
-  // Daily sections
-  days.forEach((day, i) => {
-    const dayKey = day.toLowerCase();
-    const dayId = `day-${dayKey}`;
+    // Daily sections
+    days.forEach((day) => {
+      const dayKey = day.toLowerCase();
+      html += `<div class="day-header" id="header-${dayKey}">
+        <h2>☀️ ${day}</h2>
+        <div class="day-progress" id="dp-${dayKey}"></div>
+      </div>`;
 
-    html += `<div class="day-header" id="header-${dayKey}">
-      <h2>${dayEmoji} ${day}</h2>
-      <div class="day-progress" id="dp-${dayKey}"></div>
+      html += `<div class="section-label">Engagement &mdash; 1pt each</div>`;
+      engagement.forEach((item, j) => {
+        html += makeItem(`${dayKey}-eng-${j}`, item.emoji, item.text, item.pts);
+      });
+
+      html += `<div class="section-label">Daily Habits &mdash; 1pt each</div>`;
+      habits.forEach((item, j) => {
+        html += makeItem(`${dayKey}-hab-${j}`, item.emoji, item.text, item.pts);
+      });
+
+      if (dayKey === 'saturday' && weeklyProgress.saturday) {
+        html += `<div class="section-label">Weekly Progress &mdash; 3pts each</div>`;
+        weeklyProgress.saturday.forEach((item, j) => {
+          html += makeItem(`${dayKey}-week-${j}`, item.emoji, item.text, item.pts);
+        });
+      }
+
+      if (dayKey === 'sunday' && weeklyProgress.sunday) {
+        html += `<div class="section-label">Weekly Progress &mdash; 3pts each</div>`;
+        weeklyProgress.sunday.forEach((item, j) => {
+          html += makeItem(`${dayKey}-week-${j}`, item.emoji, item.text, item.pts);
+        });
+      }
+    });
+
+    // Anytime section
+    html += `<div class="anytime-header"><h2>📱 Anytime</h2></div>`;
+    html += `<div class="section-label">Social &amp; Events &mdash; 5pts each</div>`;
+    anytime.forEach((item, i) => {
+      html += makeItem(`anytime-${i}`, item.emoji, item.text, item.pts);
+    });
+
+    // Streak section
+    html += `<div class="streak-section" id="streakSection">
+      <h2>🔥 7-Day Habit Streak</h2>
+      <div class="streak-sub">Hit all 3 daily habits (protein + water + sleep) every day = 5 bonus pts</div>
+      <div class="streak-dots" id="streakDots"></div>
+      <div class="streak-bonus" id="streakBonus">+5 BONUS PTS</div>
     </div>`;
 
-    html += `<div class="section-label">Engagement &mdash; 1pt each</div>`;
-    engagement.forEach((item, j) => {
-      html += makeItem(`${dayKey}-eng-${j}`, item.emoji, item.text, item.pts);
-    });
+    // Reset
+    html += `<div class="reset-section">
+      <button class="reset-btn" onclick="resetWeek()">Reset Week</button>
+    </div>`;
 
-    html += `<div class="section-label">Daily Habits &mdash; 1pt each</div>`;
-    habits.forEach((item, j) => {
-      html += makeItem(`${dayKey}-hab-${j}`, item.emoji, item.text, item.pts);
-    });
+    feed.innerHTML = html;
+  }
 
-    // Weekly progress items
-    if (dayKey === 'saturday' && weeklyProgress.saturday) {
-      html += `<div class="section-label">Weekly Progress &mdash; 3pts each</div>`;
-      weeklyProgress.saturday.forEach((item, j) => {
-        html += makeItem(`${dayKey}-week-${j}`, item.emoji, item.text, item.pts);
-      });
+  // =====================================================
+  // WEEK TABS
+  // =====================================================
+  function renderWeekTabs() {
+    const container = document.getElementById('weekTabs');
+    const currentWeek = getCurrentWeek();
+    let html = '';
+
+    for (let w = 1; w <= 4; w++) {
+      const isActive = w === activeWeek;
+      const isCurrent = w === currentWeek;
+      html += `<div class="week-tab${isActive ? ' active' : ''}${isCurrent ? ' current' : ''}" onclick="switchWeek(${w})">W${w}</div>`;
     }
 
-    if (dayKey === 'sunday' && weeklyProgress.sunday) {
-      html += `<div class="section-label">Weekly Progress &mdash; 3pts each</div>`;
-      weeklyProgress.sunday.forEach((item, j) => {
-        html += makeItem(`${dayKey}-week-${j}`, item.emoji, item.text, item.pts);
-      });
-    }
-  });
+    container.innerHTML = html;
+  }
 
-  // Anytime section
-  html += `<div class="anytime-header"><h2>📱 Anytime</h2></div>`;
-  html += `<div class="section-label">Social &amp; Events &mdash; 5pts each</div>`;
-  anytime.forEach((item, i) => {
-    html += makeItem(`anytime-${i}`, item.emoji, item.text, item.pts);
-  });
+  window.switchWeek = function(w) {
+    if (w === activeWeek) return;
+    activeWeek = w;
+    localState = allWeekStates[activeWeek] || {};
+    renderWeekTabs();
+    buildFeed();
+    updateProgress();
+  };
 
-  // Streak section
-  html += `<div class="streak-section" id="streakSection">
-    <h2>🔥 7-Day Habit Streak</h2>
-    <div class="streak-sub">Hit all 3 daily habits (protein + water + sleep) every day = 5 bonus pts</div>
-    <div class="streak-dots" id="streakDots"></div>
-    <div class="streak-bonus" id="streakBonus">+5 BONUS PTS</div>
-  </div>`;
-
-  // Reset
-  html += `<div class="reset-section">
-    <button class="reset-btn" onclick="resetAll()">Reset Week</button>
-  </div>`;
-
-  feed.innerHTML = html;
-
-  // Streak dots
+  // =====================================================
+  // PROGRESS
+  // =====================================================
   function renderStreakDots() {
     const dotsEl = document.getElementById('streakDots');
+    if (!dotsEl) return 0;
     let dotsHtml = '';
     let streakCount = 0;
     const abbr = ['M','T','W','T','F','S','S'];
@@ -670,38 +1823,74 @@
     dotsEl.innerHTML = dotsHtml;
 
     const bonusEl = document.getElementById('streakBonus');
-    if (streakCount === 7) {
-      bonusEl.classList.add('earned');
-      bonusEl.textContent = '🎉 +5 BONUS PTS EARNED!';
-    } else {
-      bonusEl.classList.remove('earned');
-      bonusEl.textContent = `${streakCount}/7 days — +5 BONUS PTS`;
+    if (bonusEl) {
+      if (streakCount === 7) {
+        bonusEl.classList.add('earned');
+        bonusEl.textContent = '🎉 +5 BONUS PTS EARNED!';
+      } else {
+        bonusEl.classList.remove('earned');
+        bonusEl.textContent = `${streakCount}/7 days — +5 BONUS PTS`;
+      }
     }
 
     return streakCount === 7 ? 5 : 0;
   }
 
-  // Progress
+  function calcWeekPoints(weekNum) {
+    const ws = allWeekStates[weekNum] || {};
+    let pts = 0;
+    Object.keys(ws).forEach(key => {
+      if (key.includes('-eng-') || key.includes('-hab-')) pts += 1;
+      else if (key.includes('-week-')) pts += 3;
+      else if (key.startsWith('anytime-')) pts += 5;
+    });
+    return pts;
+  }
+
   function updateProgress() {
-    let earned = 0;
+    // Current week items
+    let weekEarned = 0;
     let checked = 0;
 
     allItems.forEach(({ id, pts }) => {
       if (isChecked(id)) {
-        earned += pts;
+        weekEarned += pts;
         checked++;
       }
     });
 
     const streakBonus = renderStreakDots();
-    earned += streakBonus;
-    const total = totalPossiblePts + 5; // +5 for potential streak bonus
+    weekEarned += streakBonus;
 
-    const pct = Math.round((checked / allItems.length) * 100);
-    document.getElementById('progressBar').style.width = pct + '%';
-    document.getElementById('progressText').textContent = pct + '%';
-    document.getElementById('pointsEarned').textContent = earned;
-    document.getElementById('pointsTotal').textContent = total;
+    // Update week points
+    document.getElementById('weekPts').textContent = weekEarned;
+
+    // Update month total (sum all weeks)
+    let monthTotal = 0;
+    for (let w = 1; w <= 4; w++) {
+      if (w === activeWeek) {
+        monthTotal += weekEarned;
+      } else {
+        monthTotal += calcWeekPoints(w);
+      }
+    }
+    document.getElementById('monthPts').textContent = monthTotal;
+
+    // Update segmented progress bar
+    for (let w = 1; w <= 4; w++) {
+      const seg = document.getElementById('seg' + w);
+      if (!seg) continue;
+      if (w === activeWeek) {
+        const pct = allItems.length ? Math.round((checked / allItems.length) * 100) : 0;
+        seg.style.width = pct + '%';
+      } else {
+        // Calculate from stored state
+        const ws = allWeekStates[w] || {};
+        const count = Object.keys(ws).length;
+        const pct = allItems.length ? Math.min(Math.round((count / allItems.length) * 100), 100) : 0;
+        seg.style.width = pct + '%';
+      }
+    }
 
     // Update day progress counters
     days.forEach(day => {
@@ -716,7 +1905,9 @@
     });
   }
 
-  // Tap handler
+  // =====================================================
+  // TAP HANDLER
+  // =====================================================
   window.handleTap = function(el, event) {
     const id = el.dataset.id;
     const pts = parseInt(el.dataset.pts);
@@ -724,7 +1915,7 @@
 
     el.classList.toggle('checked', nowChecked);
 
-    // Ripple effect
+    // Ripple
     const rect = el.getBoundingClientRect();
     const ripple = document.createElement('div');
     ripple.className = 'ripple';
@@ -738,7 +1929,7 @@
     el.appendChild(ripple);
     setTimeout(() => ripple.remove(), 500);
 
-    // Sound + haptic feedback (sound works on iOS, vibrate works on Android)
+    // Sound + haptic
     if (nowChecked) {
       playPop();
       if (navigator.vibrate) navigator.vibrate(10);
@@ -748,12 +1939,12 @@
 
     // Celebrate milestones
     if (nowChecked) {
-      const checked = allItems.filter(x => isChecked(x.id)).length;
+      const totalChecked = allItems.filter(x => isChecked(x.id)).length;
       const total = allItems.length;
-      const pct = checked / total;
+      const pct = totalChecked / total;
 
       if (pct === 1) { showCelebration('🏆'); playCelebration(); }
-      else if (checked % 10 === 0) { showCelebration('🔥'); playCelebration(); }
+      else if (totalChecked % 10 === 0) { showCelebration('🔥'); playCelebration(); }
     }
   };
 
@@ -763,8 +1954,6 @@
     el.className = 'celebration';
     void el.offsetWidth;
     el.className = 'celebration show';
-
-    // Mini confetti
     if (emoji === '🏆') spawnConfetti();
   }
 
@@ -787,18 +1976,572 @@
     setTimeout(() => container.remove(), 2500);
   }
 
-  // Reset
-  window.resetAll = function() {
-    if (confirm('Reset all checkboxes for this week?')) {
-      state = {};
-      saveState();
-      document.querySelectorAll('.item.checked').forEach(el => el.classList.remove('checked'));
-      updateProgress();
+  // =====================================================
+  // RESET
+  // =====================================================
+  window.resetWeek = async function() {
+    if (!confirm(`Reset all checkboxes for Week ${activeWeek}?`)) return;
+
+    localState = {};
+    allWeekStates[activeWeek] = {};
+    saveLocalState();
+    document.querySelectorAll('.item.checked').forEach(el => el.classList.remove('checked'));
+    updateProgress();
+
+    // Server: delete all items for this week
+    if (currentUser) {
+      setSyncStatus('syncing');
+      try {
+        await sb.from('check_items').delete().match({
+          user_id: currentUser.id,
+          challenge_month: getChallengeMonth(),
+          week_number: activeWeek,
+        });
+        setSyncStatus('ok');
+      } catch (err) {
+        console.error('Reset sync error:', err);
+        setSyncStatus('error');
+      }
     }
   };
 
-  // Init
-  updateProgress();
+  // =====================================================
+  // LOCAL AVATAR SYSTEM
+  // =====================================================
+  function getLocalAvatar() {
+    if (!currentUser) return null;
+    return localStorage.getItem('bae-avatar-' + currentUser.id);
+  }
+
+  function setLocalAvatar(dataUrl) {
+    if (!currentUser) return;
+    localStorage.setItem('bae-avatar-' + currentUser.id, dataUrl);
+  }
+
+  function removeLocalAvatar() {
+    if (!currentUser) return;
+    localStorage.removeItem('bae-avatar-' + currentUser.id);
+  }
+
+  function resizeImage(file, size, quality) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+
+          // Center-crop: use the smaller dimension
+          const min = Math.min(img.width, img.height);
+          const sx = (img.width - min) / 2;
+          const sy = (img.height - min) / 2;
+          ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function updateAvatarPreview() {
+    const el = document.getElementById('settingsAvatarPreview');
+    const removeBtn = document.getElementById('avatarRemoveBtn');
+    if (!el) return;
+    const avatar = getLocalAvatar();
+    if (avatar) {
+      el.innerHTML = '<img src="' + avatar + '" alt="">';
+      if (removeBtn) removeBtn.style.display = '';
+    } else {
+      const initials = (userProfile?.display_name || '?').substring(0, 2).toUpperCase();
+      el.textContent = initials;
+      el.innerHTML = initials;
+      if (removeBtn) removeBtn.style.display = 'none';
+    }
+  }
+
+  window.handleAvatarSelect = async function(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await resizeImage(file, 100, 0.7);
+      setLocalAvatar(dataUrl);
+      updateAvatarPreview();
+    } catch (err) {
+      console.error('Avatar resize error:', err);
+    }
+    input.value = '';
+  };
+
+  window.removeAvatar = function() {
+    removeLocalAvatar();
+    updateAvatarPreview();
+  };
+
+  // =====================================================
+  // LEADERBOARD
+  // =====================================================
+  window.openLeaderboard = async function() {
+    document.getElementById('leaderboardOverlay').classList.add('open');
+    const body = document.getElementById('leaderboardBody');
+    body.innerHTML = '<div class="lb-empty">Loading...</div>';
+
+    try {
+      const { data, error } = await sb.rpc('get_leaderboard', {
+        p_challenge_month: getChallengeMonth()
+      });
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        body.innerHTML = '<div class="lb-empty">No one on the board yet. Be the first!</div>';
+        return;
+      }
+
+      let html = '';
+      const myAvatar = getLocalAvatar();
+      data.forEach((row, i) => {
+        const isMe = currentUser && row.user_id === currentUser.id;
+        const initials = (row.display_name || '?').substring(0, 2).toUpperCase();
+        let avatar;
+        if (isMe && myAvatar) {
+          avatar = `<img src="${myAvatar}" alt="">`;
+        } else if (row.avatar_url) {
+          avatar = `<img src="${escapeHtml(row.avatar_url)}" alt="">`;
+        } else {
+          avatar = initials;
+        }
+        const name = escapeHtml(row.display_name || 'Anonymous');
+
+        html += `<div class="lb-row${isMe ? ' me' : ''}" data-uid="${row.user_id}" data-name="${name}" data-pts="${row.total_points}" onclick="openAchievements(this.dataset.uid, this.dataset.name, this.dataset.pts)">
+          <div class="lb-rank">${i + 1}</div>
+          <div class="lb-avatar">${avatar}</div>
+          <div class="lb-name">${name}</div>
+          <div class="lb-pts">${row.total_points} pts</div>
+        </div>`;
+      });
+
+      body.innerHTML = html;
+    } catch (err) {
+      console.error('Leaderboard error:', err);
+      body.innerHTML = '<div class="lb-empty">Could not load leaderboard</div>';
+    }
+  };
+
+  // =====================================================
+  // SETTINGS
+  // =====================================================
+  window.openSettings = function() {
+    if (userProfile) {
+      document.getElementById('settingsName').value = userProfile.display_name || '';
+      const toggle = document.getElementById('privacyToggle');
+      toggle.classList.toggle('on', userProfile.is_public !== false);
+    }
+    updateAvatarPreview();
+    document.getElementById('settingsMsg').textContent = '';
+    document.getElementById('settingsOverlay').classList.add('open');
+  };
+
+  window.togglePrivacy = function() {
+    document.getElementById('privacyToggle').classList.toggle('on');
+  };
+
+  window.saveSettings = async function() {
+    const name = document.getElementById('settingsName').value.trim();
+    const isPublic = document.getElementById('privacyToggle').classList.contains('on');
+    const msgEl = document.getElementById('settingsMsg');
+
+    if (!name) {
+      msgEl.textContent = 'Name cannot be empty';
+      msgEl.style.color = '#ef4444';
+      return;
+    }
+
+    try {
+      const { error } = await sb.from('profiles').update({
+        display_name: name,
+        is_public: isPublic,
+      }).eq('id', currentUser.id);
+
+      if (error) throw error;
+
+      userProfile.display_name = name;
+      userProfile.is_public = isPublic;
+      document.getElementById('userName').textContent = name;
+      msgEl.textContent = 'Saved!';
+      msgEl.style.color = '';
+      setTimeout(() => { msgEl.textContent = ''; }, 2000);
+    } catch (err) {
+      console.error('Settings save error:', err);
+      msgEl.textContent = 'Error saving settings';
+      msgEl.style.color = '#ef4444';
+    }
+  };
+
+  window.signOut = async function() {
+    await sb.auth.signOut();
+    currentUser = null;
+    userProfile = null;
+    showAuthView();
+  };
+
+  // =====================================================
+  // ACHIEVEMENT VIEWER
+  // =====================================================
+  let achCache = null; // { userId, items }
+
+  window.openAchievements = async function(userId, displayName, totalPts) {
+    const overlay = document.getElementById('achievementsOverlay');
+    const body = document.getElementById('achievementsBody');
+    const title = document.getElementById('achTitle');
+    overlay.classList.add('open');
+    title.textContent = escapeHtml(displayName);
+    body.innerHTML = '<div class="lb-empty">Loading...</div>';
+
+    try {
+      const { data, error } = await sb.rpc('get_user_achievements', {
+        p_user_id: userId,
+        p_challenge_month: getChallengeMonth()
+      });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        // Could be private or genuinely no items
+        const isMe = currentUser && userId === currentUser.id;
+        if (isMe) {
+          body.innerHTML = '<div class="ach-private">You haven\'t checked anything off yet. Get started!</div>';
+        } else {
+          body.innerHTML = '<div class="ach-private">🔒 Achievements are private</div>';
+        }
+        return;
+      }
+
+      achCache = { userId, items: new Set(data.map(r => r.week_number + ':' + r.item_key)) };
+
+      // Build header
+      const initials = (displayName || '?').substring(0, 2).toUpperCase();
+      let avatarHtml = initials;
+      if (currentUser && userId === currentUser.id) {
+        const myAvatar = getLocalAvatar();
+        if (myAvatar) avatarHtml = '<img src="' + myAvatar + '" alt="" style="width:100%;height:100%;object-fit:cover">';
+      }
+
+      let html = `<div class="ach-user-header">
+        <div class="ach-user-avatar">${avatarHtml}</div>
+        <div class="ach-user-info">
+          <div class="ach-user-name">${escapeHtml(displayName)}</div>
+          <div class="ach-user-pts">${totalPts} pts total</div>
+        </div>
+      </div>`;
+
+      // Week tabs
+      html += '<div class="ach-week-tabs">';
+      for (let w = 1; w <= 4; w++) {
+        html += `<button class="ach-week-tab${w === 1 ? ' active' : ''}" onclick="switchAchWeek(${w})">${w === 4 ? 'Wk 4+' : 'Week ' + w}</button>`;
+      }
+      html += '</div>';
+
+      html += '<div id="achWeekContent"></div>';
+      body.innerHTML = html;
+      renderAchWeek(1);
+    } catch (err) {
+      console.error('Achievements error:', err);
+      body.innerHTML = '<div class="ach-private">Could not load achievements</div>';
+    }
+  };
+
+  window.switchAchWeek = function(weekNum) {
+    document.querySelectorAll('.ach-week-tab').forEach((t, i) => {
+      t.classList.toggle('active', i === weekNum - 1);
+    });
+    renderAchWeek(weekNum);
+  };
+
+  function renderAchWeek(weekNum) {
+    const container = document.getElementById('achWeekContent');
+    if (!container || !achCache) return;
+
+    const itemSet = achCache.items;
+    let html = '';
+    let doneCount = 0;
+    let totalCount = 0;
+
+    // item_key format matches buildFeed: e.g. "monday-eng-0", "monday-hab-1", "saturday-week-0", "anytime-2"
+    // For achievements we aggregate across all 7 days per week
+
+    function renderDailyCategory(catTitle, catItems, keySuffix) {
+      let catHtml = `<div class="ach-category"><div class="ach-category-title">${catTitle}</div>`;
+      catItems.forEach((item, j) => {
+        // Count how many days this item was checked (out of 7)
+        let checkedDays = 0;
+        days.forEach(day => {
+          const key = weekNum + ':' + day.toLowerCase() + '-' + keySuffix + '-' + j;
+          if (itemSet.has(key)) checkedDays++;
+        });
+        const done = checkedDays === 7;
+        const partial = checkedDays > 0 && checkedDays < 7;
+        doneCount += checkedDays;
+        totalCount += 7;
+        catHtml += `<div class="ach-item${done ? ' done' : ''}">
+          <span class="ach-check">${done ? '✅' : partial ? '🟡' : '⬜'}</span>
+          <span class="ach-text">${item.emoji} ${escapeHtml(item.text)}</span>
+          <span class="ach-pts">${checkedDays}/7 days</span>
+        </div>`;
+      });
+      catHtml += '</div>';
+      return catHtml;
+    }
+
+    function renderOneOffCategory(catTitle, catItems, dayKey, keySuffix) {
+      let catHtml = `<div class="ach-category"><div class="ach-category-title">${catTitle}</div>`;
+      catItems.forEach((item, j) => {
+        const key = weekNum + ':' + dayKey + '-' + keySuffix + '-' + j;
+        const done = itemSet.has(key);
+        if (done) doneCount++;
+        totalCount++;
+        catHtml += `<div class="ach-item${done ? ' done' : ''}">
+          <span class="ach-check">${done ? '✅' : '⬜'}</span>
+          <span class="ach-text">${item.emoji} ${escapeHtml(item.text)}</span>
+          <span class="ach-pts">${item.pts}pt${item.pts > 1 ? 's' : ''}</span>
+        </div>`;
+      });
+      catHtml += '</div>';
+      return catHtml;
+    }
+
+    // Engagement (daily — across all 7 days)
+    html += renderDailyCategory('Engagement', engagement, 'eng');
+
+    // Habits (daily — across all 7 days)
+    html += renderDailyCategory('Daily Habits', habits, 'hab');
+
+    // Weekly Progress — Saturday
+    html += renderOneOffCategory('Weekly Progress (Saturday)', weeklyProgress.saturday, 'saturday', 'week');
+
+    // Weekly Progress — Sunday
+    html += renderOneOffCategory('Weekly Progress (Sunday)', weeklyProgress.sunday, 'sunday', 'week');
+
+    // Social & Events (anytime)
+    let anytimeHtml = `<div class="ach-category"><div class="ach-category-title">Social & Events</div>`;
+    anytime.forEach((item, i) => {
+      const key = weekNum + ':anytime-' + i;
+      const done = itemSet.has(key);
+      if (done) doneCount++;
+      totalCount++;
+      anytimeHtml += `<div class="ach-item${done ? ' done' : ''}">
+        <span class="ach-check">${done ? '✅' : '⬜'}</span>
+        <span class="ach-text">${item.emoji} ${escapeHtml(item.text)}</span>
+        <span class="ach-pts">${item.pts}pt${item.pts > 1 ? 's' : ''}</span>
+      </div>`;
+    });
+    anytimeHtml += '</div>';
+    html += anytimeHtml;
+
+    // Streak bonus — check if all 3 habits done all 7 days
+    const allHabitsAllDays = days.every(day => {
+      return habits.every((_, j) => itemSet.has(weekNum + ':' + day.toLowerCase() + '-hab-' + j));
+    });
+    totalCount++;
+    if (allHabitsAllDays) doneCount++;
+    html += `<div class="ach-category"><div class="ach-category-title">Streak Bonus</div>
+      <div class="ach-item${allHabitsAllDays ? ' done' : ''}">
+        <span class="ach-check">${allHabitsAllDays ? '✅' : '⬜'}</span>
+        <span class="ach-text">🔥 7-day streak bonus</span>
+        <span class="ach-pts">5pts</span>
+      </div>
+    </div>`;
+
+    // Summary at top
+    const summaryHtml = `<div class="ach-summary">
+      <div class="ach-stat"><div class="ach-stat-val">${doneCount}</div><div class="ach-stat-label">Done</div></div>
+      <div class="ach-stat"><div class="ach-stat-val">${totalCount - doneCount}</div><div class="ach-stat-label">Remaining</div></div>
+      <div class="ach-stat"><div class="ach-stat-val">${totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0}%</div><div class="ach-stat-label">Complete</div></div>
+    </div>`;
+
+    container.innerHTML = summaryHtml + html;
+  }
+
+  // =====================================================
+  // OVERLAYS
+  // =====================================================
+  window.closeOverlay = function(id) {
+    document.getElementById(id).classList.remove('open');
+  };
+
+  // =====================================================
+  // PWA INSTALL FLOW
+  // =====================================================
+  let deferredInstallPrompt = null;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+  });
+
+  window.handleGetApp = function() {
+    if (deferredInstallPrompt) {
+      // Android/Chrome: native install prompt
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt.userChoice.then(() => {
+        deferredInstallPrompt = null;
+        goToAuth();
+      });
+    } else if (isIOS) {
+      // iOS: show manual instructions modal
+      document.getElementById('iosModal').classList.add('open');
+    } else {
+      // Fallback: just go to auth
+      goToAuth();
+    }
+  };
+
+  window.closeIosModal = function() {
+    document.getElementById('iosModal').classList.remove('open');
+    goToAuth();
+  };
+
+  window.goToAuth = function() {
+    document.getElementById('landingView').classList.add('hidden');
+    document.getElementById('authView').classList.remove('hidden');
+    // Hide back button when in standalone/PWA mode (no landing to go back to)
+    const backBtn = document.getElementById('authBack');
+    if (backBtn) backBtn.style.display = isStandalone ? 'none' : '';
+    history.pushState({ view: 'auth' }, '', '');
+  };
+
+  // =====================================================
+  // AUTH FLOW
+  // =====================================================
+  window.sendMagicLink = async function() {
+    const email = document.getElementById('authEmail').value.trim();
+    const btn = document.getElementById('authBtn');
+    const msg = document.getElementById('authMsg');
+
+    if (!email || !email.includes('@')) {
+      msg.textContent = 'Please enter a valid email';
+      msg.className = 'auth-msg error';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    msg.textContent = '';
+
+    try {
+      const { error } = await sb.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.origin + window.location.pathname,
+        },
+      });
+
+      if (error) throw error;
+
+      msg.innerHTML = '✓ Check your email for the magic link!<br><span style="font-size:12px;color:var(--text-dim)">Not there? Check your spam folder</span>';
+      msg.className = 'auth-msg';
+      btn.textContent = 'Link Sent';
+    } catch (err) {
+      console.error('Auth error:', err);
+      let friendlyMsg = err.message || 'Error sending link';
+      if (friendlyMsg.includes('rate limit')) {
+        friendlyMsg = 'Too many attempts — please wait a few minutes and try again';
+      }
+      msg.textContent = friendlyMsg;
+      msg.className = 'auth-msg error';
+      btn.disabled = false;
+      btn.textContent = 'Send Magic Link';
+    }
+  };
+
+  function showAuthView() {
+    document.getElementById('landingView').classList.add('hidden');
+    document.getElementById('authView').classList.remove('hidden');
+    document.getElementById('appView').classList.remove('active');
+  }
+
+  window.showLanding = function() {
+    document.getElementById('landingView').classList.remove('hidden');
+    document.getElementById('authView').classList.add('hidden');
+    document.getElementById('appView').classList.remove('active');
+  };
+
+  async function showAppView(user) {
+    currentUser = user;
+    document.getElementById('landingView').classList.add('hidden');
+    document.getElementById('authView').classList.add('hidden');
+    document.getElementById('appView').classList.add('active');
+
+    // Load profile
+    try {
+      const { data } = await sb.from('profiles')
+        .select('display_name, avatar_url, is_public')
+        .eq('id', user.id)
+        .single();
+
+      userProfile = data || { display_name: user.email?.split('@')[0] || 'User', is_public: true };
+    } catch {
+      userProfile = { display_name: user.email?.split('@')[0] || 'User', is_public: true };
+    }
+
+    document.getElementById('userName').textContent = userProfile.display_name;
+
+    // Load state from server, fall back to local
+    await loadStateFromServer();
+
+    renderWeekTabs();
+    buildFeed();
+    updateProgress();
+  }
+
+  // =====================================================
+  // INIT: Listen for auth state
+  // =====================================================
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) {
+      await showAppView(session.user);
+    } else if (isStandalone) {
+      // Installed as app — skip landing, go straight to auth
+      showAuthView();
+    } else {
+      showLanding();
+    }
+  });
+
+  // Check for existing session on load
+  sb.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      showAppView(session.user);
+    } else if (isStandalone) {
+      showAuthView();
+    } else {
+      showLanding();
+    }
+  });
+
+  // Browser back button support
+  window.addEventListener('popstate', (e) => {
+    const authView = document.getElementById('authView');
+    if (authView && !authView.classList.contains('hidden') && !isStandalone) {
+      showLanding();
+    }
+  });
+
+  // Register service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+
 })();
 </script>
 

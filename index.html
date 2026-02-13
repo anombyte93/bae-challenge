@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>BAE Challenge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #0a0a0f;
+    --card: #151520;
+    --card-done: #1a1a28;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --text-dim: #8888a0;
+    --accent: #a855f7;
+    --accent-glow: rgba(168, 85, 247, 0.3);
+    --green: #22c55e;
+    --green-glow: rgba(34, 197, 94, 0.2);
+    --gold: #f59e0b;
+    --pink: #ec4899;
+    --blue: #3b82f6;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* STICKY HEADER / PROGRESS */
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(10, 10, 15, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 12px 16px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .top-bar h1 {
+    font-size: 18px;
+    font-weight: 800;
+    text-align: center;
+    background: linear-gradient(135deg, var(--accent), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--pink));
+    border-radius: 3px;
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .progress-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 50px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .points-display {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .points-display span {
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* FEED */
+  .feed {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 8px 12px 120px;
+  }
+
+  /* DAY SECTION HEADERS */
+  .day-header {
+    position: sticky;
+    top: 76px;
+    z-index: 50;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 14px 4px 8px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .day-header h2 {
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .day-header .day-progress {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-left: auto;
+    font-weight: 600;
+  }
+
+  .day-header .day-progress.complete {
+    color: var(--green);
+  }
+
+  .section-label {
+    padding: 8px 4px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+  }
+
+  /* THE CHECKBOX ITEM - THE STAR OF THE SHOW */
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    margin: 4px 0;
+    background: var(--card);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .item:active {
+    transform: scale(0.97);
+  }
+
+  .item.checked {
+    background: var(--card-done);
+    border-color: rgba(34, 197, 94, 0.15);
+  }
+
+  .item.checked .item-text {
+    color: var(--text-dim);
+    text-decoration: line-through;
+    text-decoration-color: rgba(136, 136, 160, 0.4);
+  }
+
+  .item.checked .item-pts {
+    color: var(--green);
+  }
+
+  /* RIPPLE */
+  .item .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--green-glow);
+    transform: scale(0);
+    animation: ripple-out 0.5s ease-out forwards;
+    pointer-events: none;
+  }
+
+  @keyframes ripple-out {
+    to { transform: scale(4); opacity: 0; }
+  }
+
+  /* CUSTOM CHECKBOX */
+  .check-circle {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    border: 2.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    position: relative;
+  }
+
+  .item.checked .check-circle {
+    border-color: var(--green);
+    background: var(--green);
+    animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+  }
+
+  .check-circle svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.15s ease;
+  }
+
+  .item.checked .check-circle svg {
+    opacity: 1;
+    transform: scale(1);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.05s;
+  }
+
+  .item-text {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.3;
+    transition: all 0.15s ease;
+  }
+
+  .item-pts {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-dim);
+    white-space: nowrap;
+    transition: color 0.15s ease;
+  }
+
+  /* POINT BADGE COLORS */
+  .pts-1 { color: var(--green); }
+  .pts-3 { color: var(--blue); }
+  .pts-5 { color: var(--accent); }
+
+  /* ANYTIME SECTION */
+  .anytime-header {
+    margin-top: 24px;
+    padding: 14px 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .anytime-header h2 {
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--pink), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* STREAK SECTION */
+  .streak-section {
+    margin-top: 24px;
+    padding: 18px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(168, 85, 247, 0.08));
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 18px;
+  }
+
+  .streak-section h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .streak-section .streak-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .streak-dots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  .streak-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    transition: all 0.3s ease;
+  }
+
+  .streak-dot.lit {
+    border-color: var(--gold);
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--gold);
+    animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .streak-bonus {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dim);
+    transition: color 0.3s;
+  }
+
+  .streak-bonus.earned {
+    color: var(--gold);
+  }
+
+  /* RESET */
+  .reset-section {
+    text-align: center;
+    padding: 32px 16px;
+  }
+
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+
+  .reset-btn:active {
+    transform: scale(0.95);
+    border-color: #ef4444;
+    color: #ef4444;
+  }
+
+  /* CELEBRATION OVERLAY */
+  .celebration {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 48px;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .celebration.show {
+    animation: celebrate 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+
+  @keyframes celebrate {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+  }
+
+  /* CONFETTI */
+  .confetti {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 150;
+    overflow: hidden;
+  }
+
+  .confetti-piece {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    animation: confetti-fall 1.5s ease-out forwards;
+  }
+
+  @keyframes confetti-fall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>BAE MONTHLY CHALLENGE</h1>
+  <div class="progress-row">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText">0%</div>
+  </div>
+  <div class="points-display">
+    <span id="pointsEarned">0</span> / <span id="pointsTotal">0</span> pts this week
+  </div>
+</div>
+
+<div class="feed" id="feed"></div>
+
+<div class="celebration" id="celebration"></div>
+
+<script>
+(function() {
+  const STORAGE_KEY = 'bae-challenge-v1';
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const dayEmoji = '☀️';
+
+  const engagement = [
+    { emoji: '🥗', text: 'Post a photo of your meal prep', pts: 1 },
+    { emoji: '🏋️‍♀️', text: 'Gym selfie', pts: 1 },
+    { emoji: '🚶‍♀️', text: 'Share your step count', pts: 1 },
+    { emoji: '🌻', text: 'Share a positive win', pts: 1 },
+    { emoji: '🥳', text: 'Share a PB', pts: 1 },
+    { emoji: '👏🏽', text: 'Encourage another girl', pts: 1 },
+    { emoji: '👩‍🍳', text: 'Share a recipe', pts: 1 },
+  ];
+
+  const habits = [
+    { emoji: '🍗', text: 'Hit protein target', pts: 1 },
+    { emoji: '💧', text: 'Hit water goal', pts: 1 },
+    { emoji: '💤', text: '7+ hours sleep', pts: 1 },
+  ];
+
+  const weeklyProgress = {
+    saturday: [
+      { emoji: '✅', text: 'All planned sessions complete', pts: 3 },
+    ],
+    sunday: [
+      { emoji: '📋', text: 'Check-in submitted on time', pts: 3 },
+      { emoji: '⚖️', text: 'Weight / body comp win', pts: 3 },
+      { emoji: '📈', text: 'Transformation comparison photos', pts: 3 },
+    ],
+  };
+
+  const anytime = [
+    { emoji: '📲', text: 'Instagram post or reel (collab)', pts: 5 },
+    { emoji: '📸', text: 'Instagram story tagging', pts: 5 },
+    { emoji: '🥳', text: 'Testimonial / progress update', pts: 5 },
+    { emoji: '👯‍♀️', text: 'Community event', pts: 5 },
+  ];
+
+  // Audio engine (works on iOS where navigator.vibrate doesn't)
+  let audioCtx = null;
+
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function playPop() {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(900, now);
+    osc.frequency.exponentialRampToValueAtTime(600, now + 0.08);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.35, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
+
+  function playUncheck() {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.exponentialRampToValueAtTime(300, now + 0.06);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.15, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  }
+
+  function playCelebration() {
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    [0, 0.1, 0.2].forEach((delay, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      const freq = [800, 1000, 1200][i];
+      osc.frequency.setValueAtTime(freq, now + delay);
+      gain.gain.setValueAtTime(0, now + delay);
+      gain.gain.linearRampToValueAtTime(0.25, now + delay + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.2);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now + delay);
+      osc.stop(now + delay + 0.25);
+    });
+  }
+
+  // Init audio on first touch (required by iOS autoplay policy)
+  document.addEventListener('touchstart', initAudio, { once: true });
+  document.addEventListener('mousedown', initAudio, { once: true });
+
+  // State
+  let state = loadState();
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function isChecked(id) {
+    return !!state[id];
+  }
+
+  function toggle(id, pts) {
+    state[id] = !state[id];
+    saveState();
+    updateProgress();
+    return state[id];
+  }
+
+  // Build the feed
+  const feed = document.getElementById('feed');
+  let allItems = [];
+  let totalPossiblePts = 0;
+
+  function makeItem(id, emoji, text, pts) {
+    totalPossiblePts += pts;
+    allItems.push({ id, pts });
+
+    const ptsClass = pts >= 5 ? 'pts-5' : pts >= 3 ? 'pts-3' : 'pts-1';
+    const checked = isChecked(id) ? ' checked' : '';
+
+    return `<div class="item${checked}" data-id="${id}" data-pts="${pts}" onclick="handleTap(this, event)">
+      <div class="check-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <div class="item-text">${emoji} ${escapeHtml(text)}</div>
+      <div class="item-pts ${ptsClass}">${pts}pt${pts > 1 ? 's' : ''}</div>
+    </div>`;
+  }
+
+  function escapeHtml(t) {
+    const d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
+  }
+
+  let html = '';
+
+  // Daily sections
+  days.forEach((day, i) => {
+    const dayKey = day.toLowerCase();
+    const dayId = `day-${dayKey}`;
+
+    html += `<div class="day-header" id="header-${dayKey}">
+      <h2>${dayEmoji} ${day}</h2>
+      <div class="day-progress" id="dp-${dayKey}"></div>
+    </div>`;
+
+    html += `<div class="section-label">Engagement &mdash; 1pt each</div>`;
+    engagement.forEach((item, j) => {
+      html += makeItem(`${dayKey}-eng-${j}`, item.emoji, item.text, item.pts);
+    });
+
+    html += `<div class="section-label">Daily Habits &mdash; 1pt each</div>`;
+    habits.forEach((item, j) => {
+      html += makeItem(`${dayKey}-hab-${j}`, item.emoji, item.text, item.pts);
+    });
+
+    // Weekly progress items
+    if (dayKey === 'saturday' && weeklyProgress.saturday) {
+      html += `<div class="section-label">Weekly Progress &mdash; 3pts each</div>`;
+      weeklyProgress.saturday.forEach((item, j) => {
+        html += makeItem(`${dayKey}-week-${j}`, item.emoji, item.text, item.pts);
+      });
+    }
+
+    if (dayKey === 'sunday' && weeklyProgress.sunday) {
+      html += `<div class="section-label">Weekly Progress &mdash; 3pts each</div>`;
+      weeklyProgress.sunday.forEach((item, j) => {
+        html += makeItem(`${dayKey}-week-${j}`, item.emoji, item.text, item.pts);
+      });
+    }
+  });
+
+  // Anytime section
+  html += `<div class="anytime-header"><h2>📱 Anytime</h2></div>`;
+  html += `<div class="section-label">Social &amp; Events &mdash; 5pts each</div>`;
+  anytime.forEach((item, i) => {
+    html += makeItem(`anytime-${i}`, item.emoji, item.text, item.pts);
+  });
+
+  // Streak section
+  html += `<div class="streak-section" id="streakSection">
+    <h2>🔥 7-Day Habit Streak</h2>
+    <div class="streak-sub">Hit all 3 daily habits (protein + water + sleep) every day = 5 bonus pts</div>
+    <div class="streak-dots" id="streakDots"></div>
+    <div class="streak-bonus" id="streakBonus">+5 BONUS PTS</div>
+  </div>`;
+
+  // Reset
+  html += `<div class="reset-section">
+    <button class="reset-btn" onclick="resetAll()">Reset Week</button>
+  </div>`;
+
+  feed.innerHTML = html;
+
+  // Streak dots
+  function renderStreakDots() {
+    const dotsEl = document.getElementById('streakDots');
+    let dotsHtml = '';
+    let streakCount = 0;
+    const abbr = ['M','T','W','T','F','S','S'];
+
+    days.forEach((day, i) => {
+      const dayKey = day.toLowerCase();
+      const allHabits = habits.every((_, j) => isChecked(`${dayKey}-hab-${j}`));
+      if (allHabits) streakCount++;
+      dotsHtml += `<div class="streak-dot${allHabits ? ' lit' : ''}">${abbr[i]}</div>`;
+    });
+
+    dotsEl.innerHTML = dotsHtml;
+
+    const bonusEl = document.getElementById('streakBonus');
+    if (streakCount === 7) {
+      bonusEl.classList.add('earned');
+      bonusEl.textContent = '🎉 +5 BONUS PTS EARNED!';
+    } else {
+      bonusEl.classList.remove('earned');
+      bonusEl.textContent = `${streakCount}/7 days — +5 BONUS PTS`;
+    }
+
+    return streakCount === 7 ? 5 : 0;
+  }
+
+  // Progress
+  function updateProgress() {
+    let earned = 0;
+    let checked = 0;
+
+    allItems.forEach(({ id, pts }) => {
+      if (isChecked(id)) {
+        earned += pts;
+        checked++;
+      }
+    });
+
+    const streakBonus = renderStreakDots();
+    earned += streakBonus;
+    const total = totalPossiblePts + 5; // +5 for potential streak bonus
+
+    const pct = Math.round((checked / allItems.length) * 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressText').textContent = pct + '%';
+    document.getElementById('pointsEarned').textContent = earned;
+    document.getElementById('pointsTotal').textContent = total;
+
+    // Update day progress counters
+    days.forEach(day => {
+      const dayKey = day.toLowerCase();
+      const dayItems = allItems.filter(x => x.id.startsWith(dayKey + '-'));
+      const dayDone = dayItems.filter(x => isChecked(x.id)).length;
+      const el = document.getElementById('dp-' + dayKey);
+      if (el) {
+        el.textContent = dayDone + '/' + dayItems.length;
+        el.classList.toggle('complete', dayDone === dayItems.length);
+      }
+    });
+  }
+
+  // Tap handler
+  window.handleTap = function(el, event) {
+    const id = el.dataset.id;
+    const pts = parseInt(el.dataset.pts);
+    const nowChecked = toggle(id, pts);
+
+    el.classList.toggle('checked', nowChecked);
+
+    // Ripple effect
+    const rect = el.getBoundingClientRect();
+    const ripple = document.createElement('div');
+    ripple.className = 'ripple';
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    ripple.style.left = x + 'px';
+    ripple.style.top = y + 'px';
+    ripple.style.width = ripple.style.height = '80px';
+    ripple.style.marginLeft = '-40px';
+    ripple.style.marginTop = '-40px';
+    el.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 500);
+
+    // Sound + haptic feedback (sound works on iOS, vibrate works on Android)
+    if (nowChecked) {
+      playPop();
+      if (navigator.vibrate) navigator.vibrate(10);
+    } else {
+      playUncheck();
+    }
+
+    // Celebrate milestones
+    if (nowChecked) {
+      const checked = allItems.filter(x => isChecked(x.id)).length;
+      const total = allItems.length;
+      const pct = checked / total;
+
+      if (pct === 1) { showCelebration('🏆'); playCelebration(); }
+      else if (checked % 10 === 0) { showCelebration('🔥'); playCelebration(); }
+    }
+  };
+
+  function showCelebration(emoji) {
+    const el = document.getElementById('celebration');
+    el.textContent = emoji;
+    el.className = 'celebration';
+    void el.offsetWidth;
+    el.className = 'celebration show';
+
+    // Mini confetti
+    if (emoji === '🏆') spawnConfetti();
+  }
+
+  function spawnConfetti() {
+    const container = document.createElement('div');
+    container.className = 'confetti';
+    document.body.appendChild(container);
+    const colors = ['#a855f7','#ec4899','#22c55e','#f59e0b','#3b82f6'];
+
+    for (let i = 0; i < 40; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDelay = Math.random() * 0.5 + 's';
+      piece.style.animationDuration = (1 + Math.random()) + 's';
+      container.appendChild(piece);
+    }
+
+    setTimeout(() => container.remove(), 2500);
+  }
+
+  // Reset
+  window.resetAll = function() {
+    if (confirm('Reset all checkboxes for this week?')) {
+      state = {};
+      saveState();
+      document.querySelectorAll('.item.checked').forEach(el => el.classList.remove('checked'));
+      updateProgress();
+    }
+  };
+
+  // Init
+  updateProgress();
+})();
+</script>
+
+</body>
+</html>
